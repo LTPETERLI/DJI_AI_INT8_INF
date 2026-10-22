@@ -1,0 +1,59 @@
+# SPAR (4-scale) + FCM (P2/P3/P4) + Pzconv@P4-top + FCM@P4-top  → 再升到 P5/32
+nc: 10
+use_roi_clip_branch: false
+roi_clip_loss_weight: 0.3
+# SPAR (4-scale) + FCM (P2/P3/P4) + Pzconv@P4-top + FCM@P4-top  → 再升到 P5/32
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv,  [64, 3, 2]]           # 0  P1/2
+  - [-1, 1, Conv,  [128, 3, 2]]          # 1  P2/4
+  - [-1, 3, C2f,   [128, True]]          # 2
+  - [-1, 1, FCM_3, [128, 128]]               # 3  ← P2 + FCM（3/1 分裂）
+
+  - [-1, 1, Conv,  [256, 3, 2]]          # 4  P3/8
+  - [-1, 6, C2f,   [256, True]]          # 5
+  - [-1, 1, FCM_2, [256, 256]]                          # 6  ← P3 + FCM
+
+  - [-1, 1, Conv,  [512, 3, 2]]          # 7  P4/16
+  - [-1, 6, C2f,   [512, True]]          # 8
+  - [-1, 1, FCM_1, [512, 512]]                 # 9  ← P4 + FCM（1/3 分裂）
+
+  # —— 按原论文思路：在 P4 顶层先做 Pzconv，再接一个顶层 FCM（弱门控），然后再下一级升到 P5 ——
+  - [-1, 1, Pzconv, [512]]               # 10 P4-top 重标定
+  - [-1, 1, FCM,    [512, 512]]               # 11 P4-top 再做一次互补映射（建议弱门控）
+  - [-1, 1, Conv,   [1024, 3, 2]]        # 12 升到 P5/32（保持四尺度）
+  - [-1, 3, C2f,    [1024, True]]        # 13
+  - [-1, 1, SPPF,   [1024, 5]]           # 14 P5 top（供 head 使用）
+
+# -------------------------
+# Head（四尺度 P2, P3, P4, P5；仅对齐 from 索引）
+# -------------------------
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]     # 15
+  - [[-1, 8], 1, Concat, [1]]                      # 16  cat backbone P4 (C2f512 → idx 8)
+  - [-1, 3, C2f, [512, 256, 8]]                    # 17
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]     # 18
+  - [[-1, 5], 1, Concat, [1]]                      # 19  cat backbone P3 (C2f256 → idx 5)
+  - [-1, 3, AnaC2f, [256, 128, 4]]                 # 20  (P3/8-small)
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]     # 21
+  - [[-1, 2], 1, Concat, [1]]                      # 22  cat backbone P2 (C2f128 → idx 2)
+  - [-1, 3, AnaC2f, [128, 64, 4]]                  # 23  (P2/4-micro)
+
+  # ImagePoolingAttn 吃四尺度：P2(head 23), P3(head 20), P4(head 17), P5(backbone 14)
+  - [[23, 20, 17, 14], 1, ImagePoolingAttn, [256]] # 24
+
+  - [23, 1, Conv, [128, 3, 2]]                     # 25
+  - [[-1, 20], 1, Concat, [1]]                     # 26
+  - [-1, 3, AnaC2f, [256, 128, 4]]                 # 27 (P3/8)
+
+  - [-1, 1, Conv, [256, 3, 2]]                     # 28
+  - [[-1, 17], 1, Concat, [1]]                     # 29
+  - [-1, 3, AnaC2f, [512, 256, 8]]                 # 30 (P4/16)
+
+  - [-1, 1, Conv, [512, 3, 2]]                     # 31
+  - [[-1, 14], 1, Concat, [1]]                     # 32  cat backbone P5 top (SPPF → idx 14)
+  - [-1, 3, AnaC2f, [1024, 512, 16]]               # 33 (P5/32)
+
+  - [[23, 27, 30, 33], 1, CLIPDetect, [nc, 512, True]]  # 34 Detect(P2,P3,P4,P5)

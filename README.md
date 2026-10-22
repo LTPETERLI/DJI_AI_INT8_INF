@@ -37,6 +37,7 @@ tools/                         ONNX export and inspection helpers
 source/standalone_trt_runner/  PSDK-side TensorRT runner snapshot
 source/psdk_ros2_yolo_detect/  ROS2 liveview inference integration snapshot
 source/int8_reference_cpp/     INT8 EntropyCalibrator2 reference implementation
+source/yolov8_clip/            SPAR/YOLOv8 + CLIP re-ranking source snapshots
 artifacts/                     Hashes and provenance; binaries are not committed
 ```
 
@@ -66,6 +67,9 @@ python tools/inspect_onnx_io.py /path/to/best-yolo26.onnx
 
 See [source/int8_reference_cpp/ADAPTATION_NOTES.md](source/int8_reference_cpp/ADAPTATION_NOTES.md)
 for the changes required before enabling its INT8 path on Manifold 3.
+
+The separate YOLOv8 + CLIP analysis is in
+[docs/yolov8_clip_quantization.md](docs/yolov8_clip_quantization.md).
 
 ## Provenance
 

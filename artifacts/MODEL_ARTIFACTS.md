@@ -19,3 +19,15 @@ output output0 float32  [1, 300, 6]
 The engine is device-specific and must not be treated as portable. Rebuild it on
 Manifold 3 using the production TensorRT environment.
 
+## YOLOv8 + CLIP related artifacts
+
+The following files are not committed:
+
+| Artifact | Size (bytes) | Contract |
+|---|---:|---|
+| Four-class SPAR ONNX | 262,116,319 | input `[1,3,1024,1024]`, output `[1,8,87040]` |
+| VisDrone SPAR ONNX | 275,531,101 | input `[1,3,1024,1024]`, output `[1,14,21504]` |
+
+Both are FP32 static ONNX files. No corresponding TensorRT engines or INT8
+calibration caches were found.
+
