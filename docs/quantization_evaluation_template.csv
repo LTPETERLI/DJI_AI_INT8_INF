@@ -1,0 +1,1 @@
+model,variant,precision,input_resolution,calibration_set,engine_build_date,tensorrt_version,dataset,map50,map50_95,precision_at_operating_conf,recall_at_operating_conf,f1,latency_p50_ms,latency_p95_ms,latency_p99_ms,fps,gpu_peak_mb,power_w,temperature_c,confidence_mae,center_error_p95_px,matched_iou_p50,detection_count_delta,activation_kl_max,layer_js_max,layer_sqnr_min,notes

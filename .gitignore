@@ -1,0 +1,24 @@
+# Model weights and generated deployment artifacts
+*.pt
+*.pth
+*.onnx
+*.engine
+*.plan
+*.trt
+*.cache
+
+# Local datasets and generated outputs
+data/
+datasets/
+calibrator/
+runs/
+output/
+build/
+
+# Editors and Python
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+.venv/
+
